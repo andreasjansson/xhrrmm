@@ -728,6 +728,11 @@ extern char **environ;
 #define XtCHighlightTextColor	XtCBackground
 #endif
 
+#if OPT_SOUND_EFFECTS
+#define XtNsoundEffects         "soundEffects"
+#define XtCSoundEffects         "SoundEffects"
+#endif
+
 /***====================================================================***/
 
 #ifdef __cplusplus

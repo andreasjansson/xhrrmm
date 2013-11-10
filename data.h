@@ -100,6 +100,11 @@ extern jmp_buf VTend;
 extern int debug;
 #endif /* DEBUG */
 
+#ifdef OPT_SOUND_EFFECTS
+extern SoundEffect sound_effects[255];
+extern int n_sound_effects;
+#endif
+
 extern PtySelect Select_mask;
 extern PtySelect X_mask;
 extern PtySelect pty_mask;

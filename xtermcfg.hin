@@ -158,6 +158,7 @@
 #undef OPT_WIDE_CHARS		/* CF_ARG_OPTION(wide-chars) */
 #undef OPT_XMC_GLITCH		/* CF_ARG_ENABLE(xmc-glitch) */
 #undef OPT_ZICONBEEP		/* CF_ARG_DISABLE(ziconbeep) */
+#undef OPT_SOUND_EFFECTS	/* CF_ARG_ENABLE(sound_effects) */
 #undef OWN_TERMINFO_DIR		/* AC_ARG_WITH(own-terminfo) */
 #undef PROCFS_ROOT		/* CF_ARG_ENABLE(exec-xterm) */
 #undef SCROLLBAR_RIGHT		/* CF_ARG_ENABLE(rightbar) */

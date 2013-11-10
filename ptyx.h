@@ -2573,6 +2573,9 @@ typedef struct _Misc {
     float face_size[NMENUFONTS];
     char *render_font_s;
 #endif
+#if OPT_SOUND_EFFECTS
+    char *sound_effects;
+#endif
 } Misc;
 
 typedef struct _Work {
@@ -2673,6 +2676,13 @@ typedef struct _TekWidgetRec {
     XSizeHints	hints;
 } TekWidgetRec, *TekWidget;
 #endif /* OPT_TEK4014 */
+
+#if OPT_SOUND_EFFECTS
+typedef struct _SoundEffect {
+    Char *name;
+    Char *filename;
+} SoundEffect;
+#endif
 
 /*
  * terminal flags

@@ -113,3 +113,8 @@ int ice_fd = -1;
 #ifdef USE_IGNORE_RC
 int ignore_unused;
 #endif
+
+#ifdef OPT_SOUND_EFFECTS
+SoundEffect sound_effects[255];
+int n_sound_effects;
+#endif

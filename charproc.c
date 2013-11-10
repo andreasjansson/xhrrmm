@@ -185,6 +185,12 @@ static void StopBlinking(TScreen * /* screen */ );
 static void PreeditPosition(XtermWidget /* xw */ );
 #endif
 
+#if OPT_SOUND_EFFECTS
+int parse_sound_effects(char *s);
+void setup_sound_effects();
+void check_sound_effects(char *line);
+#endif
+
 #define	DEFAULT		-1
 #define BELLSUPPRESSMSEC 200
 
@@ -750,6 +756,11 @@ static XtResource xterm_resources[] =
     Sres(XtNfaceNameDoublesize, XtCFaceNameDoublesize, misc.face_wide_name, DEFFACENAME),
     Sres(XtNrenderFont, XtCRenderFont, misc.render_font_s, "default"),
 #endif
+
+#if OPT_SOUND_EFFECTS
+    Sres(XtNsoundEffects, XtCSoundEffects, misc.sound_effects, ""),
+#endif
+
 };
 
 static Boolean VTSetValues(Widget cur, Widget request, Widget new_arg,
@@ -4608,6 +4619,73 @@ WrapLine(XtermWidget xw)
     }
 }
 
+#if OPT_SOUND_EFFECTS
+// massive TODO
+static void
+_formatAscii(char *dst, unsigned value)
+{
+    switch (value) {
+    case '\\':
+	sprintf(dst, "\\\\");
+	break;
+    case '\b':
+	sprintf(dst, "\\b");
+	break;
+    case '\n':
+	sprintf(dst, "\\n");
+	break;
+    case '\r':
+	sprintf(dst, "\\r");
+	break;
+    case '\t':
+	sprintf(dst, "\\t");
+	break;
+    default:
+	if (E2A(value) < 32 || (E2A(value) >= 127 && E2A(value) < 160))
+	    sprintf(dst, "\\%03o", value & 0xff);
+	else
+	    sprintf(dst, "%c", CharOf(value));
+	break;
+    }
+}
+
+char *
+_visibleIChars(IChar *buf, unsigned len)
+{
+    static char *result;
+    static unsigned used;
+
+    if (buf != 0) {
+	unsigned limit = ((len + 1) * 8) + 1;
+	char *dst;
+
+	if (limit > used) {
+	    used = limit;
+	    result = XtRealloc(result, used);
+	}
+	if (result != 0) {
+	    dst = result;
+	    *dst = '\0';
+	    while (len--) {
+		unsigned value = *buf++;
+#if OPT_WIDE_CHARS
+		if (value > 255)
+		    sprintf(dst, "\\u+%04X", value);
+		else
+#endif
+		    _formatAscii(dst, value);
+		dst += strlen(dst);
+	    }
+	}
+    } else if (result != 0) {
+	free(result);
+	result = 0;
+	used = 0;
+    }
+    return result;
+}
+#endif
+
 /*
  * process a string of characters according to the character set indicated
  * by charset.  worry about end of line conditions (wraparound if selected).
@@ -4627,6 +4705,10 @@ dotext(XtermWidget xw,
 #endif
     Cardinal offset;
     int right = ScrnRightMargin(xw);
+
+#if OPT_SOUND_EFFECTS
+    check_sound_effects(_visibleIChars(buf, len));
+#endif
 
     /*
      * It is possible to use CUP, etc., to move outside margins.  In that
@@ -8127,6 +8209,11 @@ VTInitialize(Widget wrequest,
 	wnew->keyboard.flags |= MODE_DECKPAM;
 
     initLineData(wnew);
+
+#if OPT_SOUND_EFFECTS
+    init_Sres(misc.sound_effects);
+#endif
+
     return;
 }
 
@@ -10674,5 +10761,87 @@ noleaks_charproc(void)
 {
     if (v_buffer != 0)
 	free(v_buffer);
+}
+#endif
+
+#ifdef OPT_SOUND_EFFECTS
+void
+setup_sound_effects(XtermWidget xw)
+{
+    parse_sound_effects(xw->misc.sound_effects);
+}
+
+int
+parse_sound_effects(char *s)
+{
+#define FMT "%s in sound effect string \"%s\" (position %d)\n"
+    int i;
+    int len;
+    Boolean in_name;
+    SoundEffect sound_effect;
+    Char name[255];
+    int name_i;
+    Char filename[255];
+    int filename_i;
+
+    if (!s || !s[0])
+	return -1;
+
+    for (i = 0, len = (int)strlen(s), n_sound_effects = name_i = filename_i = 0, in_name=True;
+         i < len; i++) {
+	Char c = CharOf(s[i]);
+
+	if (c == ':') {
+            if(name_i == 0) {
+		xtermWarning(FMT, "missing sound effect name", s, i);
+                return -1;
+            }
+            in_name = False;
+        } else if (c == ',') {
+            if(in_name) {
+		xtermWarning(FMT, "missing sound effect filename", s, i);
+                return -1;
+            }
+            sound_effects[n_sound_effects].name = (Char *)strndup(name, name_i);
+            sound_effects[n_sound_effects].filename = (Char *)strndup(filename, filename_i);;
+            in_name = True;
+            name_i = filename_i = 0;
+            n_sound_effects ++;
+        }
+        else {
+            if(in_name) {
+                name[name_i ++] = c;
+            }
+            else {
+                filename[filename_i ++] = c;
+            }
+        }
+    }
+    sound_effects[n_sound_effects].name = (Char *)strndup(name, name_i);
+    sound_effects[n_sound_effects].filename = (Char *)strndup(filename, filename_i);;
+    in_name = True;
+    name_i = filename_i = 0;
+    n_sound_effects ++;
+
+    return (0);
+#undef FMT
+}
+
+void
+check_sound_effects(char *line)
+{
+    int i;
+    char cmd[600];
+    for(i = 0; i < n_sound_effects; i ++) {
+        TRACE(("trying to match: %s --> %s\n", line, sound_effects[i].name));
+        if(strstr(line, sound_effects[i].name) != NULL) {
+            TRACE(("line matched: %s --> %s\n", line, sound_effects[i].name));
+            if(fork() == 0) {
+                sprintf(cmd, "/usr/bin/aplay \"%s\" &>/dev/null", sound_effects[i].filename);
+                system(cmd);
+                exit(0);
+            }
+        }
+    }
 }
 #endif

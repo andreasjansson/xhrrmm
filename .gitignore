@@ -1,0 +1,12 @@
+*.o
+Makefile
+xterm
+xtermcfg.h
+autom4te.cache
+config.log
+config.status
+minstall
+df-install
+stamp-h.in
+xtermcfg.h
+resize

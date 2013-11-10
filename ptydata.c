@@ -381,6 +381,9 @@ fillPtyData(XtermWidget xw, PtyData * data, const char *value, int length)
     int size;
     int n;
 
+    TRACE(("fillPtyData: %s\n", value));
+
+
     /* remove the used portion of the buffer */
     trimPtyData(xw, data);
 

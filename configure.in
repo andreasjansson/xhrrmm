@@ -965,6 +965,16 @@ if test "$enable_xmc" = yes ; then
 	EXTRAOBJS="$EXTRAOBJS testxmc.o"
 fi
 
+AC_MSG_CHECKING(if you want sound effects)
+CF_ARG_ENABLE(sound-effects,
+	[  --enable-sound-effects     test: enable xmc magic-cookie emulation],
+	[enable_sound_effects=yes],
+	[enable_sound_effects=no])
+AC_MSG_RESULT($enable_sound_effects)
+if test "$enable_sound_effects" = yes ; then
+	AC_DEFINE(OPT_SOUND_EFFECTS,1,[Define to 1 to enable sound effects])
+fi
+
 dnl FIXME - extra test needed to make tcap-fkeys work on HPUX
 AC_CHECK_FUNCS(tigetstr)
 

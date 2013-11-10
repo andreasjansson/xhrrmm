@@ -2573,6 +2573,11 @@ main(int argc, char *argv[]ENVP_ARG)
     if (resource.maximized)
 	RequestMaximize(term, True);
 #endif
+
+#if OPT_SOUND_EFFECTS
+    setup_sound_effects(term);
+#endif
+
     for (;;) {
 #if OPT_TEK4014
 	if (TEK4014_ACTIVE(term))
