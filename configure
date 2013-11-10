@@ -17157,8 +17157,8 @@ cat >>confdefs.h <<\EOF
 #define OPT_TRACE 1
 EOF
 
-#	EXTRASRCS="$EXTRASRCS trace.c"
-#	EXTRAOBJS="$EXTRAOBJS trace.o"
+	EXTRASRCS="$EXTRASRCS trace.c"
+	EXTRAOBJS="$EXTRAOBJS trace.o"
 fi
 
 echo "$as_me:17164: checking if you want to use dmalloc for testing" >&5

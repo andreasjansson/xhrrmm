@@ -10827,21 +10827,82 @@ parse_sound_effects(char *s)
 #undef FMT
 }
 
+char sfx_buffer[256];
+#define MAX_SFX_BUF 20
+
 void
-check_sound_effects(char *line)
+check_sound_effects(char *chars)
 {
-    int i;
-    char cmd[600];
+    static char cmd[600], tmp[256];
+
+    int i, j, k, len, name_len, m, left, shift, new_buf_len, sfx_buffer_len;
+    char c;
+    Boolean matched;
+
+    TRACE(("sfx buffer: %s\n", sfx_buffer));
+
+    len = strlen(chars);
+    sfx_buffer_len = strlen(sfx_buffer);
+
     for(i = 0; i < n_sound_effects; i ++) {
-        TRACE(("trying to match: %s --> %s\n", line, sound_effects[i].name));
-        if(strstr(line, sound_effects[i].name) != NULL) {
-            TRACE(("line matched: %s --> %s\n", line, sound_effects[i].name));
-            if(fork() == 0) {
-                sprintf(cmd, "/usr/bin/aplay \"%s\" &>/dev/null", sound_effects[i].filename);
-                system(cmd);
-                exit(0);
+
+        TRACE(("trying to match: %s --> %s\n", chars, sound_effects[i].name));
+        name_len = strlen(sound_effects[i].name);
+
+        for(j = 0; j < len; j ++) {
+            matched = True;
+            for(k = j; k < len && (k - j) < name_len; k ++) {
+                m = name_len - (k - j) - 1;
+                if(chars[len - k - 1] != sound_effects[i].name[m]) {
+                    matched = False;
+                    break;
+                }
             }
+            if(matched)
+                break;
         }
+
+        if(!matched)
+            continue;
+
+        m --;
+
+        for(j = sfx_buffer_len - 1; m >= 0 && j >= 0; j --) {
+            if(sfx_buffer[j] != sound_effects[i].name[m])
+                goto end_sfx_loop;
+            m --;
+        }
+
+        if(m > 0)
+            continue;
+
+        TRACE(("line matched: %s --> %s\n", chars, sound_effects[i].name));
+        if(fork() == 0) {
+            sprintf(cmd, "/usr/bin/aplay \"%s\" &>/dev/null", sound_effects[i].filename);
+            system(cmd);
+            exit(0);
+        }
+
+    end_sfx_loop:
+        ;
+
     }
+
+    new_buf_len = sfx_buffer_len + len;
+    shift = new_buf_len - MAX_SFX_BUF;
+
+    if(shift <= 0) {
+        strncpy(sfx_buffer + sfx_buffer_len, chars, len);
+    } else if(shift >= MAX_SFX_BUF) {
+        strncpy(sfx_buffer, chars + len - MAX_SFX_BUF, MAX_SFX_BUF);
+    }
+    else {
+        strncpy(tmp, sfx_buffer + shift, sfx_buffer_len - shift);
+        strncpy(tmp + sfx_buffer_len - shift, chars, len);
+        strncpy(sfx_buffer, tmp, MAX_SFX_BUF);
+    }
+
+    return;
+    
 }
 #endif
